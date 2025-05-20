@@ -1,7 +1,14 @@
 import json
-import os
-import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk  # Keep this for Treeview
+import customtkinter as CTk
+from PIL import Image 
+
+# Configure customtkinter appearance
+CTk.set_appearance_mode("dark")  # Can be "Dark" or "Light"
+CTk.set_default_color_theme("green")  # You can change this to "green", "dark-blue", etc.
+
+img = Image.open('piggybank.png')
 
 # -------------------------------
 # Data Handling and User Class
@@ -22,7 +29,7 @@ class User:
         self.transactions.append({"type": "expense", "amount": amount, "category": category, "description": description})
 
     def view_report(self):
-        report = ""
+        report = []
         tincome = 0
         texpense = 0
         expense_category = {}
@@ -35,15 +42,16 @@ class User:
                 expense_category[txn['category']] = expense_category.get(txn['category'], 0) + txn['amount']
 
         saving = tincome - texpense
-        report += f"Total Income: ${tincome:.2f}\n"
-        report += f"Total Expenses: ${texpense:.2f}\n"
-        report += f"Net Savings: ${saving:.2f}\n\n"
+        report.append(f"${tincome:.2f}")
+        report.append(f"${texpense:.2f}")
+        report.append(f"${saving:.2f}")
 
-        report += "Top 3 Expense Categories:\n"
         top_expense_categories = sorted(expense_category.items(), key=lambda x: x[1], reverse=True)[:3]
-        for category, amount in top_expense_categories:
-            report += f"{category}: ${amount:.2f}\n"
+        report.append(top_expense_categories)
         return report
+
+    def view_expenses(self):
+        return [txn for txn in self.transactions if txn["type"] == "expense"]
 
     def to_dict(self):
         return {
@@ -79,16 +87,16 @@ current_user = None
 # GUI Logic
 # -------------------------------
 def show_register_window():
-    reg_win = tk.Toplevel()
+    reg_win = CTk.CTkToplevel()
     reg_win.title("Register")
     reg_win.geometry("300x200")
 
-    tk.Label(reg_win, text="Username").pack(pady=5)
-    username_entry = tk.Entry(reg_win)
+    CTk.CTkLabel(reg_win, text="Username").pack(pady=5)
+    username_entry = CTk.CTkEntry(reg_win)
     username_entry.pack()
 
-    tk.Label(reg_win, text="Password").pack(pady=5)
-    password_entry = tk.Entry(reg_win, show="*")
+    CTk.CTkLabel(reg_win, text="Password").pack(pady=5)
+    password_entry = CTk.CTkEntry(reg_win, show="*")
     password_entry.pack()
 
     def register():
@@ -102,19 +110,19 @@ def show_register_window():
             messagebox.showinfo("Success", f"User '{username}' registered!")
             reg_win.destroy()
 
-    tk.Button(reg_win, text="Register", command=register).pack(pady=10)
+    CTk.CTkButton(reg_win, text="Register", command=register).pack(pady=10)
 
 def show_login_window():
-    login_win = tk.Toplevel()
+    login_win = CTk.CTkToplevel()
     login_win.title("Login")
     login_win.geometry("300x200")
 
-    tk.Label(login_win, text="Username").pack(pady=5)
-    username_entry = tk.Entry(login_win)
+    CTk.CTkLabel(login_win, text="Username").pack(pady=5)
+    username_entry = CTk.CTkEntry(login_win)
     username_entry.pack()
 
-    tk.Label(login_win, text="Password").pack(pady=5)
-    password_entry = tk.Entry(login_win, show="*")
+    CTk.CTkLabel(login_win, text="Password").pack(pady=5)
+    password_entry = CTk.CTkEntry(login_win, show="*")
     password_entry.pack()
 
     def login():
@@ -129,84 +137,126 @@ def show_login_window():
         else:
             messagebox.showerror("Error", "Invalid credentials.")
 
-    tk.Button(login_win, text="Login", command=login).pack(pady=10)
+    CTk.CTkButton(login_win, text="Login", command=login).pack(pady=10)
 
 def show_user_menu():
-    menu_win = tk.Toplevel()
+    menu_win = CTk.CTkToplevel()
     menu_win.title("Main Menu")
-    menu_win.geometry("400x300")
+    menu_win.geometry("400x400")
 
-    tk.Label(menu_win, text=f"Welcome, {current_user.username}", font=("Arial", 14)).pack(pady=10)
+    CTk.CTkLabel(menu_win, text=f"Welcome, {current_user.username}", font=("Arial", 16)).pack(pady=10)
 
     def add_income():
-        income_win = tk.Toplevel()
+        income_win = CTk.CTkToplevel()
         income_win.title("Add Income")
 
-        tk.Label(income_win, text="Amount").pack()
-        amount_entry = tk.Entry(income_win)
+        CTk.CTkLabel(income_win, text="Amount").pack()
+        amount_entry = CTk.CTkEntry(income_win)
         amount_entry.pack()
 
-        tk.Label(income_win, text="Source").pack()
-        source_entry = tk.Entry(income_win)
+        CTk.CTkLabel(income_win, text="Source").pack()
+        source_entry = CTk.CTkEntry(income_win)
         source_entry.pack()
 
         def save_income():
-            amount = float(amount_entry.get())
-            source = source_entry.get()
-            current_user.add_income(amount, source)
-            save_data(users)
-            messagebox.showinfo("Success", "Income added!")
-            income_win.destroy()
+            try:
+                amount = float(amount_entry.get())
+                source = source_entry.get()
+                current_user.add_income(amount, source)
+                save_data(users)
+                messagebox.showinfo("Success", "Income added!")
+                income_win.destroy()
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number.")
 
-        tk.Button(income_win, text="Add Income", command=save_income).pack(pady=10)
+        CTk.CTkButton(income_win, text="Add Income", command=save_income).pack(pady=10)
 
     def add_expense():
-        expense_win = tk.Toplevel()
+        expense_win = CTk.CTkToplevel()
         expense_win.title("Add Expense")
 
-        tk.Label(expense_win, text="Amount").pack()
-        amount_entry = tk.Entry(expense_win)
+        CTk.CTkLabel(expense_win, text="Amount").pack()
+        amount_entry = CTk.CTkEntry(expense_win)
         amount_entry.pack()
 
-        tk.Label(expense_win, text="Category").pack()
-        category_entry = tk.Entry(expense_win)
+        CTk.CTkLabel(expense_win, text="Category").pack()
+        category_entry = CTk.CTkEntry(expense_win)
         category_entry.pack()
 
-        tk.Label(expense_win, text="Description").pack()
-        desc_entry = tk.Entry(expense_win)
+        CTk.CTkLabel(expense_win, text="Description").pack()
+        desc_entry = CTk.CTkEntry(expense_win)
         desc_entry.pack()
 
         def save_expense():
-            amount = float(amount_entry.get())
-            category = category_entry.get()
-            description = desc_entry.get()
-            current_user.add_expense(amount, category, description)
-            save_data(users)
-            messagebox.showinfo("Success", "Expense added!")
-            expense_win.destroy()
+            try:
+                amount = float(amount_entry.get())
+                category = category_entry.get()
+                description = desc_entry.get()
+                current_user.add_expense(amount, category, description)
+                save_data(users)
+                messagebox.showinfo("Success", "Expense added!")
+                expense_win.destroy()
+            except ValueError:
+                messagebox.showerror("Invalid Input", "Please enter a valid number.")
 
-        tk.Button(expense_win, text="Add Expense", command=save_expense).pack(pady=10)
+        CTk.CTkButton(expense_win, text="Add Expense", command=save_expense).pack(pady=10)
 
     def view_report():
         report = current_user.view_report()
-        messagebox.showinfo("Financial Report", report)
 
-    tk.Button(menu_win, text="Add Income", command=add_income).pack(pady=5)
-    tk.Button(menu_win, text="Add Expense", command=add_expense).pack(pady=5)
-    tk.Button(menu_win, text="View Report", command=view_report).pack(pady=5)
-    tk.Button(menu_win, text="Logout", command=menu_win.destroy).pack(pady=10)
+        window = CTk.CTkToplevel()
+        window.geometry('800x250')
+        window.title('Financial Report')
+
+        table = ttk.Treeview(window, columns=('Total income', 'Total expense', 'Net saving', 'Top 3 expense categories'), show='headings')
+        table.heading('Total income', text='Total income')
+        table.heading('Total expense', text='Total expense')
+        table.heading('Net saving', text='Net saving')
+        table.heading('Top 3 expense categories', text='Top 3 expense categories')
+
+        top_categories = ", ".join([f"{cat}: ${amt:.2f}" for cat, amt in report[3]])
+        table.insert('', 'end', values=(report[0], report[1], report[2], top_categories))
+        table.pack(expand=True, fill='both', padx=10, pady=10)
+
+    def view_expenses():
+        expenses = current_user.view_expenses()
+
+        windowE = CTk.CTkToplevel()
+        windowE.geometry('800x300')
+        windowE.title('Expense List')
+
+        etable = ttk.Treeview(windowE, columns=('Amount', 'Category', 'Description'), show='headings')
+        etable.heading('Amount', text='Amount')
+        etable.heading('Category', text='Category')
+        etable.heading('Description', text='Description')
+
+        for txn in expenses:
+            etable.insert('', 'end', values=(txn['amount'], txn['category'], txn['description']))
+
+        etable.pack(expand=True, fill='both', padx=10, pady=10)
+
+    CTk.CTkButton(menu_win, text="Add Income", command=add_income).pack(pady=5)
+    CTk.CTkButton(menu_win, text="Add Expense", command=add_expense).pack(pady=5)
+    CTk.CTkButton(menu_win, text="View Expense", command=view_expenses).pack(pady=5)
+    CTk.CTkButton(menu_win, text="View Report", command=view_report).pack(pady=5)
+    CTk.CTkButton(menu_win, text="Logout", command=menu_win.destroy).pack(pady=10)
 
 def main_ui():
-    root = tk.Tk()
+    root = CTk.CTk()
     root.title("Personal Finance Tracker")
-    root.geometry("400x300")
+    root.geometry("400x400")
 
-    tk.Label(root, text="Welcome to Personal Finance Tracker!", font=("Arial", 16)).pack(pady=20)
-    tk.Button(root, text="Register", width=20, command=show_register_window).pack(pady=10)
-    tk.Button(root, text="Login", width=20, command=show_login_window).pack(pady=10)
-    tk.Button(root, text="Exit", width=20, command=root.quit).pack(pady=10)
+    # Load and display image
+    image = CTk.CTkImage(light_image=img, dark_image=img, size=(100, 100))
+    CTk.CTkLabel(root, image=image, text="").pack(pady=10)
+
+    CTk.CTkLabel(root, text="Welcome to Personal Finance Tracker!", font=("Arial", 16)).pack(pady=10)
+    CTk.CTkButton(root, text="Register", width=200, command=show_register_window).pack(pady=10)
+    CTk.CTkButton(root, text="Login", width=200, command=show_login_window).pack(pady=10)
+    CTk.CTkButton(root, text="Exit", width=200, command=root.quit).pack(pady=10)
 
     root.mainloop()
+
 
 if __name__ == "__main__":
     main_ui()
